@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  clickhouse:
+    container_name: clickhouseAdmon
+    image: yandex/clickhouse-server
+    network_mode: host
+    volumes:
+      - /var/lib/admonChDB/clickhouse/:/var/lib/clickhouse/
+  redis:
+    image: redis:6.2.0
+    container_name: redisAdmon
+    network_mode: host
