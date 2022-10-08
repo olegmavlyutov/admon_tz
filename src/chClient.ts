@@ -1,4 +1,5 @@
 import { ClickHouse } from 'clickhouse';
+import { environment } from "./config";
 
 export const chClient = new ClickHouse({
     url: 'http://localhost',
@@ -6,7 +7,7 @@ export const chClient = new ClickHouse({
     format: "json",
     raw: false,
     basicAuth: {
-        username: 'default',
-        password: '',
+        username: environment.clickhouseUsername,
+        password: environment.clickhousePassword,
     },
 });

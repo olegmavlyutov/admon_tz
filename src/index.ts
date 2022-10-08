@@ -1,20 +1,14 @@
 import { chClient } from './chClient';
 import { redisClient, connectRedis } from './redis';
 
-async function buffer() {
-    const query = `CREATE TABLE test_temp (
-    mark String
-  )
-  ENGINE=MergeTree()
-  ORDER BY (mark)`;
-
-    const insertQuery = 'INSERT INTO test_temp (mark) VALUES (1)'
+async function buffer(tableToInsertName?: string) {
+    const insertQuery = `INSERT INTO ${tableToInsertName || 'test_temp'} (mark) VALUES (1)`
 
     const selectQuery = 'SELECT * FROM test_temp'
 
-    const dropQuery = 'DROP TABLE IF EXISTS test_temp';
-
-    const data = await chClient.query(selectQuery).toPromise();
+    const data = await chClient
+        .query(selectQuery)
+        .toPromise();
 
     console.log({ data });
 }
