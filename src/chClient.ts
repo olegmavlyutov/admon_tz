@@ -2,9 +2,9 @@ import { ClickHouse } from 'clickhouse';
 import { environment } from "./config";
 
 export const chClient = new ClickHouse({
-    url: 'http://localhost',
-    port: 8123,
-    format: "json",
+    url: environment.clickhouseURL,
+    port: environment.clickhousePort,
+    format: 'json',
     raw: false,
     basicAuth: {
         username: environment.clickhouseUsername,
