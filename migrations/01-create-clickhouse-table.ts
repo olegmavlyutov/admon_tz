@@ -2,14 +2,17 @@ import { chClient } from '../src/chClient';
 
 async function main(): Promise<void> {
     const createQuery = `CREATE TABLE IF NOT EXISTS test_temp (
-    mark String
+    timestamp DateTime('Asia/Istanbul'),
+    jsonKey String
   )
   ENGINE=MergeTree()
-  ORDER BY (mark)`;
+  ORDER BY (timestamp)`;
 
     await chClient
         .query(createQuery)
         .toPromise();
+
+    console.log('table created!');
 }
 
 main()
