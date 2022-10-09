@@ -6,6 +6,8 @@ async function main(): Promise<void> {
     await chClient
         .query(dropQuery)
         .toPromise();
+
+    console.log('table dropped!');
 }
 
 main()

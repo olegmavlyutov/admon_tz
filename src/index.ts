@@ -1,39 +1,31 @@
-import { chClient } from './chClient';
+import axios from "axios";
 import { redisClient } from './redis';
 import { environment } from './config';
+import { insertToClickhouse } from "./insertToClickhouse";
 
-async function buffer(url: string, tableToInsertName?: string) {
-    // await redisClient.del('myList');
+async function buffer(url: string, tableToInsertName?: string): Promise<void> {
+    const redisBufferData: string[] = await redisClient.lrange('myList', 0, -1);
 
-    const toRedisData1 = { jsonKey: 'jsonValue' };
+    // при достижении максимального значения таймаута, произвести запись в clickhouse
+    setTimeout(async () => {
+        await insertToClickhouse(redisBufferData, tableToInsertName);
 
-    await redisClient.rpush('myList', JSON.stringify(toRedisData1));
+        await redisClient.del('myList');
+    }, environment.bufferMaxTimeout * 1000);
 
-    const redisGetTest = await redisClient.lrange('myList', 0, -1);
-
-    console.log({ redisGetTest });
-    //
-    // const selectQuery = 'SELECT * FROM test_temp'
-    //
-    // console.log({ data });
-
-    const bufferLength = await redisClient.llen('myList');
+    const bufferLength: number = await redisClient.llen('myList');
     console.log({ bufferLength });
 
-    if (bufferLength >= environment.bufferMaxSize) {
-        console.log('max size - write');
-        const values = redisGetTest
-            .map((s) => JSON.parse(s))
-            .map((el) => `(${Date.now()}, '${el.jsonKey}')`)
-        console.log({ values });
+    // как только буфер доходит до максимального значения своего размера
+    if (bufferLength === environment.bufferMaxSize) {
+        await insertToClickhouse(redisBufferData, tableToInsertName);
 
-        const insertQuery = `INSERT INTO ${tableToInsertName || 'test_temp'} (timestamp, jsonKey) VALUES ${values.join(',')}`
-        console.log({ insertQuery });
-
-        const data = await chClient
-            .query(insertQuery)
-            .toPromise();
+        await redisClient.del('myList');
     }
+
+    const { data: jsonData } = await axios.get(url);
+
+    await redisClient.rpush('myList', JSON.stringify(jsonData));
 }
 
 buffer('https://baconipsum.com/api/?type=all-meat&sentences=1&start-with-lorem=1')
