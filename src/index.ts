@@ -16,16 +16,8 @@ async function buffer(url: string, tableToInsertName?: string): Promise<void> {
 
         console.log('inserted by condition');
     } else {
-        // при достижении максимального значения таймаута, произвести запись в clickhouse
+        // при достижении максимального значения таймаута, в любом случае произвести запись в clickhouse
         setInterval(async () => {
-            // как только буфер доходит до максимального значения своего размера выполнить до истечения таймера
-            if (bufferLength === environment.bufferMaxSize) {
-                await insertToClickhouse(redisBufferData, tableToInsertName);
-                await redisClient.del('myList');
-
-                console.log('inserted by condition');
-            }
-
             await insertToClickhouse(redisBufferData, tableToInsertName);
             await redisClient.del('myList');
 
