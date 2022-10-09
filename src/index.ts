@@ -6,21 +6,31 @@ import { insertToClickhouse } from "./insertToClickhouse";
 async function buffer(url: string, tableToInsertName?: string): Promise<void> {
     const redisBufferData: string[] = await redisClient.lrange('myList', 0, -1);
 
-    // при достижении максимального значения таймаута, произвести запись в clickhouse
-    setTimeout(async () => {
-        await insertToClickhouse(redisBufferData, tableToInsertName);
-
-        await redisClient.del('myList');
-    }, environment.bufferMaxTimeout * 1000);
-
     const bufferLength: number = await redisClient.llen('myList');
     console.log({ bufferLength });
 
-    // как только буфер доходит до максимального значения своего размера
+    // как только буфер доходит до максимального значения своего размера выполнить до истечения таймера
     if (bufferLength === environment.bufferMaxSize) {
         await insertToClickhouse(redisBufferData, tableToInsertName);
-
         await redisClient.del('myList');
+
+        console.log('inserted by condition');
+    } else {
+        // при достижении максимального значения таймаута, произвести запись в clickhouse
+        setInterval(async () => {
+            // как только буфер доходит до максимального значения своего размера выполнить до истечения таймера
+            if (bufferLength === environment.bufferMaxSize) {
+                await insertToClickhouse(redisBufferData, tableToInsertName);
+                await redisClient.del('myList');
+
+                console.log('inserted by condition');
+            }
+
+            await insertToClickhouse(redisBufferData, tableToInsertName);
+            await redisClient.del('myList');
+
+            console.log('inserted by timer');
+        }, environment.bufferMaxTimeout * 1000);
     }
 
     const { data: jsonData } = await axios.get(url);
